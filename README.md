@@ -338,7 +338,7 @@ Please keep fixes scoped — for example: `fix(auth): normalize context imports`
 
 ## 📄 License
 
-Copyright (c) 2025 Atul Singh. All Rights Reserved.
+Copyright (c) 2026 Atul Singh. All Rights Reserved.
 
 This project and its source code are the exclusive intellectual property of the author.
 
