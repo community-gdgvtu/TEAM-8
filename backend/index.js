@@ -1,0 +1,75 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { connectDB, ensureDemoUsers } = require('./db');
+const usersRouter = require('./routes/users');
+const vehiclesRouter = require('./routes/vehicles');
+const collectionsRouter = require('./routes/collections');
+const reportsRouter = require('./routes/reports');
+const routesRouter = require('./routes/routes');
+const notificationsRouter = require('./routes/notifications');
+const { router: authRouter, authMiddleware } = require('./routes/auth');
+const binsRouter = require('./routes/bins');
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Connect to MongoDB Atlas and seed demo users when the database is empty
+connectDB()
+  .then(async () => {
+    try {
+      await ensureDemoUsers();
+    } catch (error) {
+      console.error('Startup demo user seeding failed:', error.message);
+    }
+  })
+  .catch((error) => {
+    console.error('Database connection failed during startup:', error.message);
+  });
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+
+app.use(express.json());
+
+// Simple request logger to help debug client requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - body:`, req.body);
+  next();
+});
+
+app.get('/', (req, res) => {
+  res.send('Backend server is running with MongoDB Atlas!');
+});
+
+// Users API
+app.use('/api/users', authMiddleware, usersRouter);
+// Vehicles API
+app.use('/api/vehicles', authMiddleware, vehiclesRouter);
+// Collections API
+app.use('/api/collections', authMiddleware, collectionsRouter);
+// Reports API
+app.use('/api/reports', authMiddleware, reportsRouter);
+// Routes API
+app.use('/api/routes', authMiddleware, routesRouter);
+// Notifications API
+app.use('/api/notifications', authMiddleware, notificationsRouter);
+// Auth API
+app.use('/api/auth', authRouter);
+// Bins API
+app.use('/api/bins', authMiddleware, binsRouter);
+
+// Centralized Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(statusCode).json({ error: message });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Using MongoDB Atlas for data storage`);
+});
